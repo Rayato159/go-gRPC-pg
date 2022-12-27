@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/Rayato159/go-gRPC-pg";
+
+message Order {
+    string id = 1;
+}
+
+message Product {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string picture = 4;
+}
+
+service Transfer {
+    rpc SendData (Order) returns (Product) {}
+}
