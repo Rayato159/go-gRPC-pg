@@ -46,7 +46,9 @@ grpcServer.Serve(lis)
 
 Method
 ```go
-func (s *server) SendData(ctx context.Context, in *pb.Order) (*pb.Product, error) { return &pb.Product{}}
+func (s *server) SendData(ctx context.Context, in *pb.Order) (*pb.Product, error) {
+    return &pb.Product{}
+}
 ```
 
 Client
