@@ -10,7 +10,7 @@ syntax = "proto3"; // required
 option go_package = "your-package-name"; // required
 
 message MessageName {
-    opt type field_name = <order
+    opt type field_name = order
     ...
 }
 
