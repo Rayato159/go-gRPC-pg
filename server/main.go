@@ -80,7 +80,7 @@ func (s *server) StreamProduct(in *pb.OrderArray, stream pb.Transfer_StreamProdu
 				log.Println(err.Error())
 				return fmt.Errorf(err.Error())
 			}
-			fmt.Printf("success, product_id: %s has been streamed", s.Products[in.Id[i]].Id)
+			fmt.Printf("product_id: %s has been streamed\n", s.Products[in.Id[i]].Id)
 		}
 		time.Sleep(time.Second * 2)
 	}
