@@ -75,7 +75,6 @@ func (s *server) GetProduct(ctx context.Context, in *pb.Order) (*pb.Product, err
 
 func (s *server) StreamProduct(in *pb.OrderArray, stream pb.Transfer_StreamProductServer) error {
 	for i := range in.Id {
-		fmt.Println(i)
 		if s.Products[in.Id[i]] != nil {
 			if err := stream.Send(s.Products[in.Id[i]]); err != nil {
 				log.Println(err.Error())

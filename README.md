@@ -29,7 +29,8 @@ protoc --go_out=. --go_opt=paths=source_relative \
 
 <h2>Quick Start</h2>
 
-Server
+<h3>Server</h3>
+
 ```go
 //...
 lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", *cfg.Host, *cfg.Port))
@@ -44,14 +45,35 @@ pb.RegisterTransferServer(grpcServer, &server{})
 grpcServer.Serve(lis)
 ```
 
-Method
+<strong>Method</strong>
+
+Simple RPC
 ```go
 func (s *server) SendData(ctx context.Context, in *pb.Order) (*pb.Product, error) {
     return &pb.Product{}
 }
 ```
 
-Client
+<strong>Server-side streaming RPC</strong>
+
+Sever -> `stream.Send()` is for stream a data
+```go
+func (s *server) StreamProduct(in *pb.OrderArray, stream pb.Transfer_StreamProductServer) error {
+	for i := range in.Id {
+        //...
+		if s.Products[in.Id[i]] != nil {
+			if err := stream.Send(s.Products[in.Id[i]]); err != nil {
+                //...
+			}
+		}
+	}
+    //...
+	return nil
+}
+```
+
+<h3>Client</h3>
+
 ```go
 //...
 conn, err := grpc.Dial(addrUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -68,6 +90,24 @@ r, err := c.SendData(ctx, &pb.Order{
     Id: *productId,
 })
 if err != nil {
+    //...
+}
+```
+
+For receive a streaming data from server `stream.Recv()` to Receive a data and `io.EOF` is mean the sever function has been returned
+```go
+stream, err := client.StreamProduct(ctx, orderIds)
+if err != nil {
+    //...
+}
+for {
+    products, err := stream.Recv()
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        log.Fatalf("%v.StreamProduct(_) = _, %v", client, err)
+    }
     //...
 }
 ```
