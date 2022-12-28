@@ -45,9 +45,10 @@ pb.RegisterTransferServer(grpcServer, &server{})
 grpcServer.Serve(lis)
 ```
 
-<strong>Method</strong>
+<h3>Method</h3>
 
-Simple RPC
+<strong>Simple RPC</strong>
+
 ```go
 func (s *server) SendData(ctx context.Context, in *pb.Order) (*pb.Product, error) {
     return &pb.Product{}
