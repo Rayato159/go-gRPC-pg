@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
@@ -41,7 +42,7 @@ func main() {
 	url := fmt.Sprintf("%s:%s", *cfg.Host, *cfg.Port)
 
 	// product id
-	productId := flag.String("product_id", defaultId, "Product id")
+	// productId := flag.String("product_id", defaultId, "Product id")
 
 	flag.Parse()
 
@@ -50,16 +51,40 @@ func main() {
 		log.Fatalf("error, failed to connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewTransferClient(conn)
+	client := pb.NewTransferClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	r, err := c.SendData(ctx, &pb.Order{
-		Id: *productId,
-	})
+	// r, err := client.GetProduct(ctx, &pb.Order{
+	// 	Id: *productId,
+	// })
+	// if err != nil {
+	// 	log.Fatalf("could not send data with an: %v", err)
+	// }
+	// printStructJSON(r)
+
+	orderIds := &pb.OrderArray{
+		Id: []string{
+			"1305e1b4-bb31-4a18-9f06-261750d92beb",
+			"9bc62ee1-2bf9-4cc7-b81d-71b3140815c0",
+			"ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
+			"28f44977-e213-4351-a2e0-c3fd8a5be3df",
+			"8f35264a-61f1-4451-a85b-8d53670ed730",
+		},
+	}
+	stream, err := client.StreamProduct(ctx, orderIds)
 	if err != nil {
 		log.Fatalf("could not send data with an: %v", err)
 	}
-	printStructJSON(r)
+	for {
+		products, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%v.StreamProduct(_) = _, %v", client, err)
+		}
+		printStructJSON(products)
+	}
 }

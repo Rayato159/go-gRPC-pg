@@ -22,7 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TransferClient interface {
-	SendData(ctx context.Context, in *Order, opts ...grpc.CallOption) (*Product, error)
+	GetProduct(ctx context.Context, in *Order, opts ...grpc.CallOption) (*Product, error)
+	StreamProduct(ctx context.Context, in *OrderArray, opts ...grpc.CallOption) (Transfer_StreamProductClient, error)
 }
 
 type transferClient struct {
@@ -33,20 +34,53 @@ func NewTransferClient(cc grpc.ClientConnInterface) TransferClient {
 	return &transferClient{cc}
 }
 
-func (c *transferClient) SendData(ctx context.Context, in *Order, opts ...grpc.CallOption) (*Product, error) {
+func (c *transferClient) GetProduct(ctx context.Context, in *Order, opts ...grpc.CallOption) (*Product, error) {
 	out := new(Product)
-	err := c.cc.Invoke(ctx, "/Transfer/SendData", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/Transfer/GetProduct", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
+func (c *transferClient) StreamProduct(ctx context.Context, in *OrderArray, opts ...grpc.CallOption) (Transfer_StreamProductClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Transfer_ServiceDesc.Streams[0], "/Transfer/StreamProduct", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &transferStreamProductClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Transfer_StreamProductClient interface {
+	Recv() (*Product, error)
+	grpc.ClientStream
+}
+
+type transferStreamProductClient struct {
+	grpc.ClientStream
+}
+
+func (x *transferStreamProductClient) Recv() (*Product, error) {
+	m := new(Product)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TransferServer is the server API for Transfer service.
 // All implementations must embed UnimplementedTransferServer
 // for forward compatibility
 type TransferServer interface {
-	SendData(context.Context, *Order) (*Product, error)
+	GetProduct(context.Context, *Order) (*Product, error)
+	StreamProduct(*OrderArray, Transfer_StreamProductServer) error
 	mustEmbedUnimplementedTransferServer()
 }
 
@@ -54,8 +88,11 @@ type TransferServer interface {
 type UnimplementedTransferServer struct {
 }
 
-func (UnimplementedTransferServer) SendData(context.Context, *Order) (*Product, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendData not implemented")
+func (UnimplementedTransferServer) GetProduct(context.Context, *Order) (*Product, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProduct not implemented")
+}
+func (UnimplementedTransferServer) StreamProduct(*OrderArray, Transfer_StreamProductServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamProduct not implemented")
 }
 func (UnimplementedTransferServer) mustEmbedUnimplementedTransferServer() {}
 
@@ -70,22 +107,43 @@ func RegisterTransferServer(s grpc.ServiceRegistrar, srv TransferServer) {
 	s.RegisterService(&Transfer_ServiceDesc, srv)
 }
 
-func _Transfer_SendData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Transfer_GetProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Order)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TransferServer).SendData(ctx, in)
+		return srv.(TransferServer).GetProduct(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Transfer/SendData",
+		FullMethod: "/Transfer/GetProduct",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TransferServer).SendData(ctx, req.(*Order))
+		return srv.(TransferServer).GetProduct(ctx, req.(*Order))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _Transfer_StreamProduct_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(OrderArray)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TransferServer).StreamProduct(m, &transferStreamProductServer{stream})
+}
+
+type Transfer_StreamProductServer interface {
+	Send(*Product) error
+	grpc.ServerStream
+}
+
+type transferStreamProductServer struct {
+	grpc.ServerStream
+}
+
+func (x *transferStreamProductServer) Send(m *Product) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 // Transfer_ServiceDesc is the grpc.ServiceDesc for Transfer service.
@@ -96,10 +154,16 @@ var Transfer_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TransferServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendData",
-			Handler:    _Transfer_SendData_Handler,
+			MethodName: "GetProduct",
+			Handler:    _Transfer_GetProduct_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamProduct",
+			Handler:       _Transfer_StreamProduct_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "proto/shop.proto",
 }
