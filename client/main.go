@@ -69,8 +69,6 @@ func main() {
 			"1305e1b4-bb31-4a18-9f06-261750d92beb",
 			"9bc62ee1-2bf9-4cc7-b81d-71b3140815c0",
 			"ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
-			"28f44977-e213-4351-a2e0-c3fd8a5be3df",
-			"8f35264a-61f1-4451-a85b-8d53670ed730",
 		},
 	}
 	orders := []*pb.Order{
@@ -82,12 +80,6 @@ func main() {
 		},
 		{
 			Id: "ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
-		},
-		{
-			Id: "28f44977-e213-4351-a2e0-c3fd8a5be3df",
-		},
-		{
-			Id: "8f35264a-61f1-4451-a85b-8d53670ed730",
 		},
 	}
 
@@ -117,11 +109,7 @@ func main() {
 		fmt.Printf("order: %v has been streamed\n", orders[i].Id)
 		time.Sleep(time.Millisecond * 500)
 	}
-	// reply, err := streamOrder.CloseAndRecv()
-	// if err != nil {
-	// 	log.Fatalf("%v.CloseAndRecv() got error %v, want %v", streamOrder, err, nil)
-	// }
-	// log.Printf("order summary: %v", reply)
+	streamOrder.CloseAndRecv()
 
 	streamAll, err := client.StreamAll(ctx)
 	waitc := make(chan struct{})

@@ -52,18 +52,6 @@ func newServer() *server {
 				Description: "Thai's street food",
 				Picture:     "https://i.pinimg.com/564x/eb/a8/c1/eba8c154a31061bf7ff989a45bd9727d.jpg",
 			},
-			"28f44977-e213-4351-a2e0-c3fd8a5be3df": {
-				Id:          "677f7334-59e9-4001-8887-34a41e49d444",
-				Name:        "Tom yum kung",
-				Description: "Thai's street food",
-				Picture:     "https://i.pinimg.com/564x/eb/a8/c1/eba8c154a31061bf7ff989a45bd9727d.jpg",
-			},
-			"8f35264a-61f1-4451-a85b-8d53670ed730": {
-				Id:          "6da756cf-ba0d-43bb-853c-63bc4a6e967b",
-				Name:        "Mug",
-				Description: "Coffee glasses",
-				Picture:     "https://i.pinimg.com/564x/eb/a8/c1/eba8c154a31061bf7ff989a45bd9727d.jpg",
-			},
 		}}
 	return s
 }
