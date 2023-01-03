@@ -68,17 +68,6 @@ func main() {
 			"ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
 		},
 	}
-	orders := []*pb.Order{
-		{
-			Id: "1305e1b4-bb31-4a18-9f06-261750d92beb",
-		},
-		{
-			Id: "9bc62ee1-2bf9-4cc7-b81d-71b3140815c0",
-		},
-		{
-			Id: "ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
-		},
-	}
 
 	streamProduct, err := client.StreamProduct(ctx, orderIds)
 	if err != nil {
@@ -93,6 +82,18 @@ func main() {
 			log.Fatalf("%v.StreamProduct(_) = _, %v", client, err)
 		}
 		printStructJSON(products)
+	}
+
+	orders := []*pb.Order{
+		{
+			Id: "1305e1b4-bb31-4a18-9f06-261750d92beb",
+		},
+		{
+			Id: "9bc62ee1-2bf9-4cc7-b81d-71b3140815c0",
+		},
+		{
+			Id: "ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
+		},
 	}
 
 	streamOrder, err := client.StreamOrder(ctx)
