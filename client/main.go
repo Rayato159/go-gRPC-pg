@@ -41,9 +41,6 @@ func main() {
 	}
 	url := fmt.Sprintf("%s:%s", *cfg.Host, *cfg.Port)
 
-	// product id
-	productId := flag.String("product_id", defaultId, "Product id")
-
 	flag.Parse()
 
 	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -57,7 +54,7 @@ func main() {
 	defer cancel()
 
 	r, err := client.GetProduct(ctx, &pb.Order{
-		Id: *productId,
+		Id: "1305e1b4-bb31-4a18-9f06-261750d92beb",
 	})
 	if err != nil {
 		log.Fatalf("could not send data with an: %v", err)
