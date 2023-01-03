@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type TransferClient interface {
 	GetProduct(ctx context.Context, in *Order, opts ...grpc.CallOption) (*Product, error)
 	StreamProduct(ctx context.Context, in *OrderArray, opts ...grpc.CallOption) (Transfer_StreamProductClient, error)
+	StreamOrder(ctx context.Context, opts ...grpc.CallOption) (Transfer_StreamOrderClient, error)
 }
 
 type transferClient struct {
@@ -75,12 +76,47 @@ func (x *transferStreamProductClient) Recv() (*Product, error) {
 	return m, nil
 }
 
+func (c *transferClient) StreamOrder(ctx context.Context, opts ...grpc.CallOption) (Transfer_StreamOrderClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Transfer_ServiceDesc.Streams[1], "/Transfer/StreamOrder", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &transferStreamOrderClient{stream}
+	return x, nil
+}
+
+type Transfer_StreamOrderClient interface {
+	Send(*Order) error
+	CloseAndRecv() (*Product, error)
+	grpc.ClientStream
+}
+
+type transferStreamOrderClient struct {
+	grpc.ClientStream
+}
+
+func (x *transferStreamOrderClient) Send(m *Order) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *transferStreamOrderClient) CloseAndRecv() (*Product, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(Product)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // TransferServer is the server API for Transfer service.
 // All implementations must embed UnimplementedTransferServer
 // for forward compatibility
 type TransferServer interface {
 	GetProduct(context.Context, *Order) (*Product, error)
 	StreamProduct(*OrderArray, Transfer_StreamProductServer) error
+	StreamOrder(Transfer_StreamOrderServer) error
 	mustEmbedUnimplementedTransferServer()
 }
 
@@ -93,6 +129,9 @@ func (UnimplementedTransferServer) GetProduct(context.Context, *Order) (*Product
 }
 func (UnimplementedTransferServer) StreamProduct(*OrderArray, Transfer_StreamProductServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamProduct not implemented")
+}
+func (UnimplementedTransferServer) StreamOrder(Transfer_StreamOrderServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamOrder not implemented")
 }
 func (UnimplementedTransferServer) mustEmbedUnimplementedTransferServer() {}
 
@@ -146,6 +185,32 @@ func (x *transferStreamProductServer) Send(m *Product) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Transfer_StreamOrder_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TransferServer).StreamOrder(&transferStreamOrderServer{stream})
+}
+
+type Transfer_StreamOrderServer interface {
+	SendAndClose(*Product) error
+	Recv() (*Order, error)
+	grpc.ServerStream
+}
+
+type transferStreamOrderServer struct {
+	grpc.ServerStream
+}
+
+func (x *transferStreamOrderServer) SendAndClose(m *Product) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *transferStreamOrderServer) Recv() (*Order, error) {
+	m := new(Order)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Transfer_ServiceDesc is the grpc.ServiceDesc for Transfer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -163,6 +228,11 @@ var Transfer_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "StreamProduct",
 			Handler:       _Transfer_StreamProduct_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "StreamOrder",
+			Handler:       _Transfer_StreamOrder_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "proto/shop.proto",

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -22,6 +24,11 @@ type config struct {
 type server struct {
 	pb.UnimplementedTransferServer
 	Products map[string]*pb.Product
+}
+
+func printStructJSON(input interface{}) {
+	val, _ := json.MarshalIndent(input, "", "  ")
+	fmt.Println(string(val))
 }
 
 func newServer() *server {
@@ -83,6 +90,27 @@ func (s *server) StreamProduct(in *pb.OrderArray, stream pb.Transfer_StreamProdu
 			fmt.Printf("product_id: %s has been streamed\n", s.Products[in.Id[i]].Id)
 		}
 		time.Sleep(time.Second * 2)
+	}
+	return nil
+}
+
+func (s *server) StreamOrder(stream pb.Transfer_StreamOrderServer) error {
+	for {
+		orderId, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("stream success!")
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if s.Products[orderId.Id] != nil {
+			printStructJSON(s.Products[orderId.Id])
+		} else {
+			msg := fmt.Sprintf("error, product: %v not found", orderId.Id)
+			log.Println(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 	return nil
 }

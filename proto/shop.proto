@@ -20,4 +20,5 @@ message Product {
 service Transfer {
     rpc GetProduct (Order) returns (Product) {}
     rpc StreamProduct (OrderArray) returns (stream Product) {}
+    rpc StreamOrder (stream Order) returns (Product) {}
 }

@@ -73,12 +73,30 @@ func main() {
 			"8f35264a-61f1-4451-a85b-8d53670ed730",
 		},
 	}
-	stream, err := client.StreamProduct(ctx, orderIds)
+	orders := []*pb.Order{
+		{
+			Id: "1305e1b4-bb31-4a18-9f06-261750d92beb",
+		},
+		{
+			Id: "9bc62ee1-2bf9-4cc7-b81d-71b3140815c0",
+		},
+		{
+			Id: "ff9e20f0-afa6-4618-8a07-2f4b2e894cd1",
+		},
+		{
+			Id: "28f44977-e213-4351-a2e0-c3fd8a5be3df",
+		},
+		{
+			Id: "8f35264a-61f1-4451-a85b-8d53670ed730",
+		},
+	}
+
+	streamProduct, err := client.StreamProduct(ctx, orderIds)
 	if err != nil {
-		log.Fatalf("could not send data with an: %v", err)
+		log.Fatalf("could not stream product with an error: %v", err)
 	}
 	for {
-		products, err := stream.Recv()
+		products, err := streamProduct.Recv()
 		if err == io.EOF {
 			break
 		}
@@ -87,4 +105,21 @@ func main() {
 		}
 		printStructJSON(products)
 	}
+
+	streamOrder, err := client.StreamOrder(ctx)
+	if err != nil {
+		log.Fatalf("could not stream order with an error: %v", err)
+	}
+	for i := range orders {
+		if err := streamOrder.Send(orders[i]); err != nil {
+			log.Fatalf("%v.Send(%v) = %v", streamOrder, orders[i], err)
+		}
+		fmt.Printf("order: %v has been streamed\n", orders[i].Id)
+		time.Sleep(time.Second * 2)
+	}
+	reply, err := streamOrder.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", streamOrder, err, nil)
+	}
+	log.Printf("order summary: %v", reply)
 }
