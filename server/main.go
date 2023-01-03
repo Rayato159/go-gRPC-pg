@@ -89,7 +89,7 @@ func (s *server) StreamProduct(in *pb.OrderArray, stream pb.Transfer_StreamProdu
 			}
 			fmt.Printf("product_id: %s has been streamed\n", s.Products[in.Id[i]].Id)
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Millisecond * 500)
 	}
 	return nil
 }
@@ -104,6 +104,7 @@ func (s *server) StreamOrder(stream pb.Transfer_StreamOrderServer) error {
 		if err != nil {
 			return err
 		}
+
 		if s.Products[orderId.Id] != nil {
 			printStructJSON(s.Products[orderId.Id])
 		} else {
@@ -113,6 +114,27 @@ func (s *server) StreamOrder(stream pb.Transfer_StreamOrderServer) error {
 		}
 	}
 	return nil
+}
+
+func (s *server) StreamAll(stream pb.Transfer_StreamAllServer) error {
+	for {
+		orderId, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if s.Products[orderId.Id] != nil {
+			printStructJSON(s.Products[orderId.Id])
+			stream.Send(s.Products[orderId.Id])
+		} else {
+			msg := fmt.Sprintf("error, product: %v not found", orderId.Id)
+			log.Println(msg)
+			return fmt.Errorf(msg)
+		}
+	}
 }
 
 func main() {

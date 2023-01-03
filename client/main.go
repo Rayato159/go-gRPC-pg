@@ -42,7 +42,7 @@ func main() {
 	url := fmt.Sprintf("%s:%s", *cfg.Host, *cfg.Port)
 
 	// product id
-	// productId := flag.String("product_id", defaultId, "Product id")
+	productId := flag.String("product_id", defaultId, "Product id")
 
 	flag.Parse()
 
@@ -56,13 +56,13 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	// r, err := client.GetProduct(ctx, &pb.Order{
-	// 	Id: *productId,
-	// })
-	// if err != nil {
-	// 	log.Fatalf("could not send data with an: %v", err)
-	// }
-	// printStructJSON(r)
+	r, err := client.GetProduct(ctx, &pb.Order{
+		Id: *productId,
+	})
+	if err != nil {
+		log.Fatalf("could not send data with an: %v", err)
+	}
+	printStructJSON(r)
 
 	orderIds := &pb.OrderArray{
 		Id: []string{
@@ -115,11 +115,34 @@ func main() {
 			log.Fatalf("%v.Send(%v) = %v", streamOrder, orders[i], err)
 		}
 		fmt.Printf("order: %v has been streamed\n", orders[i].Id)
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Millisecond * 500)
 	}
-	reply, err := streamOrder.CloseAndRecv()
-	if err != nil {
-		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", streamOrder, err, nil)
+	// reply, err := streamOrder.CloseAndRecv()
+	// if err != nil {
+	// 	log.Fatalf("%v.CloseAndRecv() got error %v, want %v", streamOrder, err, nil)
+	// }
+	// log.Printf("order summary: %v", reply)
+
+	streamAll, err := client.StreamAll(ctx)
+	waitc := make(chan struct{})
+	go func() {
+		for {
+			product, err := streamAll.Recv()
+			if err == io.EOF {
+				close(waitc)
+				return
+			}
+			if err != nil {
+				log.Fatalf("Failed to receive a note : %v", err)
+			}
+			printStructJSON(product)
+		}
+	}()
+	for i := range orders {
+		if err := streamAll.Send(orders[i]); err != nil {
+			log.Fatalf("failed to send a note: %v", err)
+		}
 	}
-	log.Printf("order summary: %v", reply)
+	streamAll.CloseSend()
+	<-waitc
 }
