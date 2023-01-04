@@ -19,11 +19,8 @@ import (
 type config struct {
 	Host *string
 	Port *string
+	Key  string
 }
-
-const (
-	defaultId string = "9bc62ee1-2bf9-4cc7-b81d-71b3140815c0"
-)
 
 func printStructJSON(input interface{}) {
 	val, _ := json.MarshalIndent(input, "", "  ")
@@ -43,6 +40,11 @@ func main() {
 
 	flag.Parse()
 
+	// altsTC := alts.NewClientCreds(alts.DefaultClientOptions())
+	// conn, err := grpc.Dial(url, grpc.WithTransportCredentials(altsTC))
+	// if err != nil {
+	// 	log.Fatalf("error, failed to connect: %v", err)
+	// }
 	conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("error, failed to connect: %v", err)

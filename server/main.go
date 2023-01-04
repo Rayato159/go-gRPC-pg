@@ -143,6 +143,8 @@ func main() {
 	log.Printf("success, server is starting on %v:%v", *cfg.Host, *cfg.Port)
 
 	var opts []grpc.ServerOption
+	// altsTC := alts.NewServerCreds(alts.DefaultServerOptions())
+	// grpcServer := grpc.NewServer(grpc.Creds(altsTC))
 	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterTransferServer(grpcServer, newServer())
 	grpcServer.Serve(lis)
